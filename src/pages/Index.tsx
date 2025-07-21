@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,27 @@ import Icon from '@/components/ui/icon';
 const Index = () => {
   const [loanAmount, setLoanAmount] = useState([15000]);
   const [showApplication, setShowApplication] = useState(false);
+  const [applicationStep, setApplicationStep] = useState(1);
+  const [timeLeft, setTimeLeft] = useState(20);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    middleName: '',
+    phone: '',
+    documentPhoto: null as File | null,
+  });
+  const [showApproval, setShowApproval] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(20);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    middleName: '',
+    phone: '',
+    documentPhoto: null as File | null,
+  });
+  const [showApproval, setShowApproval] = useState(false);
 
   const calculatePayment = () => {
     const amount = loanAmount[0];
@@ -23,6 +44,39 @@ const Index = () => {
   };
 
   const { interest, total } = calculatePayment();
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isTimerActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((time) => time - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      setIsTimerActive(false);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerActive, timeLeft]);
+
+  const handleApplicationSubmit = () => {
+    setShowApplication(true);
+    setApplicationStep(1);
+    setTimeLeft(20);
+    setIsTimerActive(true);
+  };
+
+  const handleFormSubmit = () => {
+    setApplicationStep(2);
+    setTimeout(() => {
+      setShowApproval(true);
+    }, 1500);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData({ ...formData, documentPhoto: file });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -124,7 +178,7 @@ const Index = () => {
                 </div>
 
                 <Button 
-                  onClick={() => setShowApplication(true)}
+                  onClick={handleApplicationSubmit}
                   className="w-full py-4 text-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-300"
                 >
                   <Icon name="CreditCard" className="w-5 h-5 mr-2" />
@@ -360,23 +414,207 @@ const Index = () => {
         </div>
       </footer>
 
-      {/* Application Modal Placeholder */}
-      {showApplication && (
+      {/* Application Modal */}
+      {showApplication && !showApproval && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg">
+            <CardHeader className="relative">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Заявка на займ</CardTitle>
+                  <CardDescription>
+                    {applicationStep === 1 ? 'Заполните анкету для получения займа' : 'Проверка данных через ФССП...'}
+                  </CardDescription>
+                </div>
+                <div className="text-right">
+                  <div className={`text-2xl font-bold ${timeLeft <= 5 ? 'text-red-500' : 'text-blue-600'}`}>
+                    {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
+                  </div>
+                  <div className="text-sm text-gray-500">осталось времени</div>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              {applicationStep === 1 ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="lastName">Фамилия *</Label>
+                      <Input
+                        id="lastName"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        placeholder="Иванов"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="firstName">Имя *</Label>
+                      <Input
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        placeholder="Иван"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="middleName">Отчество</Label>
+                    <Input
+                      id="middleName"
+                      value={formData.middleName}
+                      onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+                      placeholder="Иванович"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phone">Номер телефона *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="+7 (999) 999-99-99"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="document">Фото документа *</Label>
+                    <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                      <Icon name="Upload" className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <div className="space-y-2">
+                        <p className="text-gray-600">
+                          {formData.documentPhoto ? formData.documentPhoto.name : 'Загрузите фото паспорта'}
+                        </p>
+                        <Input
+                          id="document"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => document.getElementById('document')?.click()}
+                        >
+                          Выбрать файл
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <Icon name="Shield" className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="text-blue-800 font-medium">Проверка через ФССП</p>
+                        <p className="text-blue-700">
+                          Ваши данные будут проверены через систему ФССП для обеспечения безопасности займа.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex space-x-3">
+                    <Button 
+                      onClick={() => {
+                        setShowApplication(false);
+                        setIsTimerActive(false);
+                        setTimeLeft(20);
+                      }} 
+                      variant="outline" 
+                      className="flex-1"
+                    >
+                      Отмена
+                    </Button>
+                    <Button 
+                      onClick={handleFormSubmit}
+                      disabled={!formData.firstName || !formData.lastName || !formData.phone || !formData.documentPhoto || timeLeft === 0}
+                      className="flex-1"
+                    >
+                      <Icon name="Send" className="w-4 h-4 mr-2" />
+                      Подать заявку
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <Icon name="Search" className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Проверяем ваши данные</h3>
+                  <p className="text-gray-600 mb-4">
+                    Идет проверка через систему ФССП, это займет несколько секунд...
+                  </p>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Approval Modal */}
+      {showApproval && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Подача заявки</CardTitle>
-              <CardDescription>Заполните анкету для получения займа</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-gray-600">
-                Здесь будет форма подачи заявки с полями для ФИО, телефона, загрузки фото документа и интеграцией с ФССП.
-              </p>
-              <div className="flex space-x-2">
-                <Button onClick={() => setShowApplication(false)} variant="outline" className="flex-1">
-                  Отмена
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Icon name="CheckCircle" className="w-12 h-12 text-green-600" />
+                </div>
+                
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Займ одобрен!</h2>
+                
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Сумма займа:</span>
+                    <span className="font-semibold">{loanAmount[0].toLocaleString()} ₽</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">К возврату:</span>
+                    <span className="font-semibold text-blue-600">{total.toLocaleString()} ₽</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Срок:</span>
+                    <span className="font-semibold">30 дней</span>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 p-4 rounded-lg mb-6">
+                  <p className="text-green-800 text-sm">
+                    Деньги поступят на вашу карту в течение 5 минут
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={() => {
+                    setShowApproval(false);
+                    setShowApplication(false);
+                    setApplicationStep(1);
+                    setIsTimerActive(false);
+                    setTimeLeft(20);
+                    setFormData({
+                      firstName: '',
+                      lastName: '',
+                      middleName: '',
+                      phone: '',
+                      documentPhoto: null,
+                    });
+                  }}
+                  className="w-full"
+                >
+                  Перейти в личный кабинет
                 </Button>
-                <Button className="flex-1">Продолжить</Button>
               </div>
             </CardContent>
           </Card>
