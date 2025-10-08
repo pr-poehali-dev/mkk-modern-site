@@ -15,7 +15,7 @@ class LoanApplication(BaseModel):
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Send loan application to Bitrix24 CRM via webhook
+    Business: Send loan application to Bitrix24 CRM via OAuth token
     Args: event with httpMethod, body containing loan application data
           context with request_id
     Returns: HTTP response with created lead ID or error
@@ -44,15 +44,17 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': json.dumps({'error': 'Method not allowed'})
         }
     
-    webhook_url = os.environ.get('BITRIX24_WEBHOOK_URL')
-    if not webhook_url:
+    bitrix_domain = os.environ.get('BITRIX24_DOMAIN')
+    access_token = os.environ.get('BITRIX24_ACCESS_TOKEN')
+    
+    if not bitrix_domain or not access_token:
         return {
             'statusCode': 500,
             'headers': {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            'body': json.dumps({'error': 'Bitrix24 webhook URL not configured'})
+            'body': json.dumps({'error': 'Bitrix24 credentials not configured'})
         }
     
     body_data = json.loads(event.get('body', '{}'))
@@ -76,9 +78,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     }
     
     try:
+        api_url = f"https://{bitrix_domain}/rest/crm.lead.add.json"
+        
+        params = {
+            'auth': access_token,
+            **lead_data
+        }
+        
         response = requests.post(
-            f"{webhook_url}crm.lead.add.json",
-            json=lead_data,
+            api_url,
+            json=params,
             timeout=10
         )
         
