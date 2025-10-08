@@ -23,6 +23,7 @@ const Index = () => {
     documentPhoto: null as File | null,
   });
   const [showApproval, setShowApproval] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const calculatePayment = () => {
     const amount = loanAmount[0];
@@ -56,6 +57,7 @@ const Index = () => {
 
   const handleFormSubmit = async () => {
     setApplicationStep(2);
+    setIsSubmitting(true);
     
     try {
       const response = await fetch('https://functions.poehali.dev/6581a859-c6d1-4b38-bffa-b41b0ca48c24', {
@@ -77,11 +79,13 @@ const Index = () => {
       const result = await response.json();
       
       setTimeout(() => {
+        setIsSubmitting(false);
         setShowApproval(true);
       }, 1500);
     } catch (error) {
       console.error('Error sending to Bitrix24:', error);
       setTimeout(() => {
+        setIsSubmitting(false);
         setShowApproval(true);
       }, 1500);
     }
@@ -552,25 +556,34 @@ const Index = () => {
                     </Button>
                     <Button 
                       onClick={handleFormSubmit}
-                      disabled={!formData.firstName || !formData.lastName || !formData.phone || !formData.documentPhoto || timeLeft === 0}
+                      disabled={!formData.firstName || !formData.lastName || !formData.phone || !formData.documentPhoto || timeLeft === 0 || isSubmitting}
                       className="flex-1"
                     >
-                      <Icon name="Send" className="w-4 h-4 mr-2" />
-                      Подать заявку
+                      {isSubmitting ? (
+                        <>
+                          <Icon name="Loader2" className="w-4 h-4 mr-2 animate-spin" />
+                          Отправка...
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="Send" className="w-4 h-4 mr-2" />
+                          Подать заявку
+                        </>
+                      )}
                     </Button>
                   </div>
                 </>
               ) : (
                 <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                    <Icon name="Search" className="w-8 h-8 text-blue-600" />
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Icon name="Loader2" className="w-8 h-8 text-blue-600 animate-spin" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Проверяем ваши данные</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Отправляем заявку в Битрикс24</h3>
                   <p className="text-gray-600 mb-4">
-                    Идет проверка через систему ФССП, это займет несколько секунд...
+                    Создаем лид в CRM и проверяем данные через ФССП...
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                    <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{width: isSubmitting ? '100%' : '60%'}}></div>
                   </div>
                 </div>
               )}
