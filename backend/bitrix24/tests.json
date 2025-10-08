@@ -1,0 +1,41 @@
+{
+  "tests": [
+    {
+      "name": "Test OPTIONS request for CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": "",
+      "bodyMatcher": "exact"
+    },
+    {
+      "name": "Test POST with valid loan application",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "firstName": "Иван",
+        "lastName": "Петров",
+        "middleName": "Сергеевич",
+        "phone": "+79991234567",
+        "loanAmount": 15000,
+        "loanTerm": 30,
+        "documentPhoto": "base64_encoded_image_data"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": "boolean"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test POST with invalid data (missing required fields)",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "firstName": "Иван"
+      },
+      "expectedStatus": 500,
+      "bodyMatcher": "partial"
+    }
+  ]
+}

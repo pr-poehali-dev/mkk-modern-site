@@ -64,11 +64,37 @@ const Index = () => {
     setIsTimerActive(true);
   };
 
-  const handleFormSubmit = () => {
+  const handleFormSubmit = async () => {
     setApplicationStep(2);
-    setTimeout(() => {
-      setShowApproval(true);
-    }, 1500);
+    
+    try {
+      const response = await fetch('https://functions.poehali.dev/6581a859-c6d1-4b38-bffa-b41b0ca48c24', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          middleName: formData.middleName,
+          phone: formData.phone,
+          loanAmount: loanAmount[0],
+          loanTerm: 30,
+          documentPhoto: formData.documentPhoto?.name || '',
+        }),
+      });
+      
+      const result = await response.json();
+      
+      setTimeout(() => {
+        setShowApproval(true);
+      }, 1500);
+    } catch (error) {
+      console.error('Error sending to Bitrix24:', error);
+      setTimeout(() => {
+        setShowApproval(true);
+      }, 1500);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
