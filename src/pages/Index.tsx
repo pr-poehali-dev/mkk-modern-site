@@ -23,16 +23,6 @@ const Index = () => {
     documentPhoto: null as File | null,
   });
   const [showApproval, setShowApproval] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(20);
-  const [isTimerActive, setIsTimerActive] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    middleName: '',
-    phone: '',
-    documentPhoto: null as File | null,
-  });
-  const [showApproval, setShowApproval] = useState(false);
 
   const calculatePayment = () => {
     const amount = loanAmount[0];
